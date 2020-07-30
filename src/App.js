@@ -14,10 +14,9 @@ class Transactions extends React.Component {
     super(props);
     this.state = {
       show: false,
-      debit: 1,
-      credit: 2,
+      amount: 0,
       runningbalance: 3,
-      description: "enter to know",
+      description: "Please Enter Desc",
       selectValue: "debit",
       transactiondata: [],
     }
@@ -28,17 +27,17 @@ class Transactions extends React.Component {
   }
 
   callTransactiondata = () => {
-    axios.get('http://localhost:3000/tasks')
-    .then( (response) => {
-      // handle success
-      this.setState({
-        transactiondata: response.data
+    axios.get('http://localhost:8000/tasks')
+      .then((response) => {
+        // handle success
+        this.setState({
+          transactiondata: response.data
+        })
       })
-    })
-    .catch( (error) => {
-      // handle error
-      console.log(error);
-    });
+      .catch((error) => {
+        // handle error
+        console.log(error);
+      });
   }
 
   showModal = () => {
@@ -50,36 +49,42 @@ class Transactions extends React.Component {
   };
 
   handleSubmit = () => {
-    axios.post('http://localhost:3000/tasks', {
-      credit: this.state.credit,
-      debit: this.state.debit,
-      runningbalance: this.state.runningbalance,
-      description: this.state.description,
-    })
-    .then( (response) => {
-      console.log(response);
-      this.hideModal();
-      this.callTransactiondata();
+    let dataPost = {
+      description: this.state.description
+    }
 
-    })
-    .catch((error)  => {
-      console.log(error);
-      this.hideModal();
-      this.callTransactiondata();
-    });
-    
+    if(this.state.selectValue === "credit") {
+      dataPost.credit = this.state.amount;
+       dataPost.debit = 0;
+    } else {
+      dataPost.credit = 0;
+      dataPost.debit = this.state.amount;
+    }
+
+    axios.post('http://localhost:8000/tasks', dataPost)
+      .then((response) => {
+        console.log(response);
+        this.hideModal();
+        this.callTransactiondata();
+
+      })
+      .catch((error) => {
+        console.log(error);
+        this.hideModal();
+        this.callTransactiondata();
+      });
   }
 
-  handleChangeDebit = (event) => {
-    this.setState({debit: event.target.value});
-  }
-
-  handleChangeCredit = (event) => {
-    this.setState({credit: event.target.value});
+  handleChangeAmount = (event) => {
+    this.setState({ amount: event.target.value });
   }
 
   handleChangeDesc = (event) => {
-    this.setState({description: event.target.value});
+    this.setState({ description: event.target.value });
+  }
+
+  handleChange = (event) => {
+    this.setState({ selectValue: event.target.value });
   }
 
   render() {
@@ -88,41 +93,27 @@ class Transactions extends React.Component {
         <Modal show={this.state.show}>
           <div> New Transaction </div>
           <div className='add-bill-container'>
+            
             <div>
               <label htmlFor="userfill"> Transaction Type </label>
-
-              <select id="userfill">
+              <select id="userfill" value={this.state.selectValue} onChange={this.handleChange}>
                 <option value="credit"> Credit </option>
-                <option defaultValue={this.state.selectValue}> Debit </option>
+                <option value="debit"> Debit </option>
               </select>
             </div>
 
             <div>
-              <label htmlFor="debit"> Debit </label>
-              <input className='add-bill-form-control form-control'
-                placeholder='Enter Amount' defaultValue={this.state.debit} onChange={this.handleChangeDebit}
-                type='number'></input>
-            </div>
-
-            <div>
-              <label htmlFor="credit"> Credit </label>
-              <input className='add-bill-form-control form-control'
-                placeholder='Enter Amount' defaultValue={this.state.credit} onChange={this.handleChangeCredit}
+              <label htmlFor="amount"> Amount </label>
+              <input id="amount" className='add-bill-form-control form-control'
+                placeholder='Enter Amount' defaultValue={this.state.amount} onChange={this.handleChangeAmount}
                 type='number'></input>
             </div>
 
             <div>
               <label htmlFor="description"> Description </label>
-              <input className='add-bill-form-control form-control'
+              <input id="description" className='add-bill-form-control form-control'
                 placeholder='Enter Description' defaultValue={this.state.description} onChange={this.handleChangeDesc}
                 type='string'></input>
-            </div>
-
-            <div>
-              <label htmlFor="credit"> Running Balance </label>
-              <input className='add-bill-form-control form-control'
-                placeholder='Enter Running Balance' defaultValue={this.state.runningbalance} onChange={this.handleChangeCredit}
-                type='number'></input>
             </div>
             <button onClick={this.handleSubmit}>
               Send Data
@@ -177,18 +168,19 @@ class Transactions extends React.Component {
               <th> - </th>
               <th> - </th>
             </tr>
-            {this.state.transactiondata.map(( listValue, index ) => {
-            return (
-              <tr key={index}>
-                <td>{listValue.Created_date}</td>
-                <td>{listValue.credit}</td>
-                <td>{listValue.debit}</td>
-                <td>{listValue.description}</td>
-                <td>{listValue.runningbalance}</td>
-              </tr>
-            );
-          })}
-            
+            {this.state.transactiondata.map((listValue, index) => {
+              return (
+                <tr key={index}>
+                  <td>{listValue.Created_date}</td>
+                  <td>{listValue.description}</td>
+                  <td>{listValue.credit}</td>
+                  <td>{listValue.debit}</td>
+                  <td> {listValue.totalAmount}</td>
+                  {/* <td>{listValue.debit -listValue.credit - }</td> */}
+                </tr>
+              );
+            })}
+
           </tbody>
         </table>
       </div>
